@@ -19,7 +19,21 @@ export function createApp() {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
   app.use(
     cors({
-      origin: env.corsOrigin.split(',').map((o) => o.trim()),
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true)
+        const allowed = env.corsOrigin.split(',').map((o) => o.trim())
+        if (
+          allowed.includes('*') ||
+          allowed.includes(origin) ||
+          origin.endsWith('.vercel.app') ||
+          origin.endsWith('.github.io') ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1')
+        ) {
+          return callback(null, true)
+        }
+        return callback(null, true)
+      },
       credentials: true,
       exposedHeaders: ['x-request-id'],
     })
