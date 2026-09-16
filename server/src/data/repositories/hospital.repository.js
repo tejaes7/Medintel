@@ -23,8 +23,10 @@ export const hospitalRepository = {
     if (department) query.departments = new RegExp(department, 'i')
     if (name) query.name = new RegExp(name, 'i')
 
-    let items = await Hospital.find(query).limit(limit).skip(skip).lean()
-    const total = await Hospital.countDocuments(query)
+    let [items, total] = await Promise.all([
+      Hospital.find(query).limit(limit).skip(skip).lean(),
+      Hospital.countDocuments(query),
+    ])
 
     if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
       items = items.map((h) => {

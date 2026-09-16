@@ -8,9 +8,11 @@ import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/err
 
 export const hospitalService = {
   async searchHospitals({ city, department, name, lat, lng, limit = 20, skip = 0 }) {
-    const { items, total } = await hospitalRepository.search({ city, department, name, lat, lng, limit, skip })
-    const cities = await hospitalRepository.listCities()
-    const departments = await hospitalRepository.listDepartments()
+    const [{ items, total }, cities, departments] = await Promise.all([
+      hospitalRepository.search({ city, department, name, lat, lng, limit, skip }),
+      hospitalRepository.listCities(),
+      hospitalRepository.listDepartments(),
+    ])
 
     return {
       hospitals: items.map(presentHospital),
