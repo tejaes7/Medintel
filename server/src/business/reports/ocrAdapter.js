@@ -9,6 +9,32 @@ import { UpstreamError } from '../../shared/errors.js'
  * a plain-text upload.
  */
 
+/** Direct digital PDF extraction — fast, offline, and requires no third-party API keys. */
+function createPdfProvider() {
+  return {
+    name: 'pdf-parser',
+    isConfigured: () => true,
+    async extract({ filePath, mimeType }) {
+      const isPdf = mimeType === 'application/pdf' || filePath.toLowerCase().endsWith('.pdf')
+      if (!isPdf) throw new UpstreamError('Not a PDF file')
+
+      const buffer = await fs.readFile(filePath)
+      const { PDFParse } = await import('pdf-parse')
+      const parser = new PDFParse({ data: buffer })
+      try {
+        const res = await parser.getText()
+        const text = (res?.text ?? '').trim()
+        if (!text) {
+          throw new UpstreamError('PDF contains no text layer (may be a scanned image)')
+        }
+        return { text, provider: 'pdf-parser' }
+      } finally {
+        await parser.destroy().catch(() => {})
+      }
+    },
+  }
+}
+
 function createOcrSpaceProvider() {
   return {
     name: 'ocr.space',
@@ -59,7 +85,7 @@ function createPlainTextProvider() {
   }
 }
 
-const providers = [createPlainTextProvider(), createOcrSpaceProvider()]
+const providers = [createPlainTextProvider(), createPdfProvider(), createOcrSpaceProvider()]
 
 /**
  * @returns {Promise<{text: string, provider: string}>}
@@ -82,4 +108,4 @@ export async function extractText({ filePath, mimeType }) {
   throw new UpstreamError('No OCR provider could extract text from this file', { attempted })
 }
 
-export const ocrAvailable = () => providers.some((p) => p.isConfigured() && p.name !== 'plaintext')
+export const ocrAvailable = () => true
