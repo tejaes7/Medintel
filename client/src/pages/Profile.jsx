@@ -182,7 +182,7 @@ function HospitalAdminProfile() {
 }
 
 function PatientProfile() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, signOut } = useAuth()
 
   const [name, setName] = useState('')
   const [age, setAge] = useState('')
