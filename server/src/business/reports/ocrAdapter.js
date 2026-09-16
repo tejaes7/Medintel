@@ -24,13 +24,66 @@ function createPdfProvider() {
       try {
         const res = await parser.getText()
         const text = (res?.text ?? '').trim()
-        if (!text) {
-          throw new UpstreamError('PDF contains no text layer (may be a scanned image)')
+        const words = text.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean)
+        if (text.length < 25 || words.length < 5) {
+          throw new UpstreamError('PDF contains no text layer or only page numbers (scanned document)')
         }
         return { text, provider: 'pdf-parser' }
       } finally {
         await parser.destroy().catch(() => {})
       }
+    },
+  }
+}
+
+/** Gemini Multimodal Vision — reads scanned PDFs, flattened documents, and camera photos. */
+function createGeminiVisionProvider() {
+  return {
+    name: 'gemini-vision',
+    isConfigured: () => Boolean(env.ai.gemini.apiKey),
+
+    async extract({ filePath, mimeType }) {
+      const buffer = await fs.readFile(filePath)
+      const base64 = buffer.toString('base64')
+      const cfg = env.ai.gemini
+
+      let resolvedMime = mimeType
+      if (!resolvedMime || resolvedMime === 'application/octet-stream') {
+        const lower = filePath.toLowerCase()
+        if (lower.endsWith('.pdf')) resolvedMime = 'application/pdf'
+        else if (lower.endsWith('.png')) resolvedMime = 'image/png'
+        else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) resolvedMime = 'image/jpeg'
+        else resolvedMime = 'application/pdf'
+      }
+
+      const url = `${cfg.baseUrl}/${cfg.model}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { inlineData: { mimeType: resolvedMime, data: base64 } },
+                {
+                  text: 'Extract and transcribe all clinical text, lab test names, results, reference ranges, units, and patient notes from this document verbatim. Preserve the table structure and all numbers.',
+                },
+              ],
+            },
+          ],
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new UpstreamError(`Gemini vision responded ${res.status}`, { status: res.status, body: body.slice(0, 400) })
+      }
+
+      const data = await res.json()
+      const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
+      if (!text.trim()) throw new UpstreamError('Gemini vision returned no text from this document')
+      return { text: text.trim(), provider: 'gemini-vision' }
     },
   }
 }
@@ -85,7 +138,12 @@ function createPlainTextProvider() {
   }
 }
 
-const providers = [createPlainTextProvider(), createPdfProvider(), createOcrSpaceProvider()]
+const providers = [
+  createPlainTextProvider(),
+  createPdfProvider(),
+  createGeminiVisionProvider(),
+  createOcrSpaceProvider(),
+]
 
 /**
  * @returns {Promise<{text: string, provider: string}>}
