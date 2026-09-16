@@ -1,0 +1,13 @@
+PATIENT NAME: Aarav Menon
+AGE / SEX: 27 / Male
+LAB NAME: CityCare Diagnostics
+DATE: 08-Sep-2026
+
+COMPLETE BLOOD COUNT (CBC) & METABOLIC PANEL
+--------------------------------------------------
+Hemoglobin: 14.2 g/dL (Ref Range: 13.5 - 17.5 g/dL)
+WBC Count: 11.8 x10^3/uL (Ref Range: 4.5 - 11.0 x10^3/uL) [FLAGGED: HIGH]
+Platelet Count: 240 x10^3/uL (Ref Range: 150 - 450 x10^3/uL)
+Fasting Blood Glucose: 106 mg/dL (Ref Range: 70 - 99 mg/dL) [FLAGGED: HIGH]
+Serum Creatinine: 0.9 mg/dL (Ref Range: 0.7 - 1.3 mg/dL)
+Bilirubin Total: 0.8 mg/dL (Ref Range: 0.2 - 1.2 mg/dL)

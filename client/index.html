@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>MedIntel</title>
+    <script>
+      // Surfaces startup failures on screen instead of leaving a blank page.
+      (function () {
+        function show(title, detail) {
+          var root = document.getElementById('root')
+          if (!root) return
+          root.innerHTML =
+            '<div style="font:14px/1.6 ui-monospace,Consolas,monospace;color:#0a2540;padding:32px;max-width:900px">' +
+            '<p style="color:#be123c;font-weight:700;margin:0 0 8px">' + title + '</p>' +
+            '<pre style="white-space:pre-wrap;background:#f6f9fc;border:1px solid #e6ebf1;border-radius:8px;padding:16px;margin:0">' +
+            String(detail).replace(/</g, '&lt;') + '</pre></div>'
+        }
+        window.addEventListener('error', function (e) {
+          show('Script error', (e.error && e.error.stack) || e.message || e.filename)
+        })
+        window.addEventListener('unhandledrejection', function (e) {
+          show('Unhandled promise rejection', (e.reason && e.reason.stack) || e.reason)
+        })
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
