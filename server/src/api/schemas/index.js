@@ -59,7 +59,7 @@ export const schemas = {
     query: z.object({
       limit: intFromQuery(50, 100),
       skip: z.coerce.number().int().min(0).default(0).catch(0),
-      kind: z.enum(['Triage', 'Chat', 'Report', 'Medication', 'Account']).optional(),
+      kind: z.enum(['Triage', 'Chat', 'Report', 'Medication', 'Account', 'Appointment', 'Doctor', 'Camp', 'Facility']).optional(),
     }),
   },
 

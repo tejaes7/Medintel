@@ -133,9 +133,29 @@ export async function autoSeedIfNeeded() {
     doses: Array.from({ length: 10 }, (_, i) => ({ scheduledFor: daysAgo(10 - i), status: 'taken' })),
   })
 
+  const demoAppt = await Appointment.create({
+    patientId: user._id,
+    hospitalId: apollo._id,
+    doctorId: doc1._id,
+    appointmentDate: new Date(Date.now() + 2 * 86400000),
+    timeSlot: '10:30 AM',
+    reason: 'Follow-up on recent respiratory symptoms and cardiac check',
+    status: 'Booked',
+  })
+
   await TimelineEvent.insertMany([
+    // Patient timeline events
     { userId: user._id, kind: 'Account', tone: 'brand', title: 'Account created', body: 'MedIntel health record starts here.', occurredAt: daysAgo(52) },
     { userId: user._id, kind: 'Medication', tone: 'brand', title: 'Montelukast schedule created', body: 'Daily 21:00.', occurredAt: daysAgo(52), sourceId: reminder._id },
+    { userId: user._id, kind: 'Appointment', tone: 'brand', title: 'Appointment booked with Dr. Ananya Rao', body: 'Apollo City Hospital · 10:30 AM', occurredAt: daysAgo(1), sourceId: demoAppt._id },
+
+    // Hospital audit timeline events (Apollo City Hospital)
+    { userId: hospUser._id, kind: 'Account', tone: 'brand', title: 'Facility Account Initialized', body: 'Apollo City Hospital administrative desk activated on MedIntel network.', occurredAt: daysAgo(30) },
+    { userId: hospUser._id, kind: 'Facility', tone: 'brand', title: 'Departments & Emergency Desk Configured', body: 'Configured Cardiology, Neurology, Pediatrics, Orthopedics, General Medicine.', occurredAt: daysAgo(29), sourceId: apollo._id },
+    { userId: hospUser._id, kind: 'Doctor', tone: 'teal', title: 'Specialist Added: Dr. Ananya Rao', body: 'MBBS, MD (General Medicine), DM (Cardiology) onboarded to Cardiology.', occurredAt: daysAgo(25), sourceId: doc1._id },
+    { userId: hospUser._id, kind: 'Doctor', tone: 'teal', title: 'Specialist Added: Dr. Rajesh Sharma', body: 'MBBS, MS (Orthopedics) onboarded to Orthopedics.', occurredAt: daysAgo(20), sourceId: doc2._id },
+    { userId: hospUser._id, kind: 'Camp', tone: 'teal', title: 'Health Camp Published', body: 'Free Cardiac Screening & ECG Drive scheduled at Main Auditorium.', occurredAt: daysAgo(5) },
+    { userId: hospUser._id, kind: 'Appointment', tone: 'brand', title: 'New Consultation Booking Received', body: 'Aarav Menon booked consultation with Dr. Ananya Rao for 10:30 AM.', occurredAt: daysAgo(1), sourceId: demoAppt._id },
   ])
 
   logger.info('auto-seeded demo database successfully (Patient: aarav.menon@example.com / MedIntel2025!)')

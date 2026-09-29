@@ -65,14 +65,26 @@ export const appointmentService = {
       })
 
       const dateFormatted = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      const docPrefix = doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`
       await historyService.record({
         userId: patientId,
         kind: 'Appointment',
         tone: 'brand',
-        title: `Appointment booked with Dr. ${doctor.name}`,
+        title: `Appointment booked with ${docPrefix}`,
         body: `${hospital.name} · ${dateFormatted} at ${timeSlot}`,
         sourceId: appt._id,
       })
+
+      if (hospital.userId) {
+        await historyService.record({
+          userId: hospital.userId,
+          kind: 'Appointment',
+          tone: 'brand',
+          title: `New Consultation Booked: ${docPrefix}`,
+          body: `Patient appointment requested for ${dateFormatted} at ${timeSlot}.${reason ? ` Reason: ${reason}` : ''}`,
+          sourceId: appt._id,
+        })
+      }
 
       const populated = await appointmentRepository.findById(appt._id)
       return presentAppointment(populated)
@@ -136,6 +148,18 @@ export const appointmentService = {
       body: `Dr. ${appt.doctorId?.name || 'Doctor'} at ${appt.hospitalId?.name || 'Hospital'} (${newStatus})`,
       sourceId: appt._id,
     })
+
+    const hosp = await hospitalRepository.findById(appt.hospitalId?._id || appt.hospitalId)
+    if (hosp?.userId) {
+      await historyService.record({
+        userId: hosp.userId,
+        kind: 'Appointment',
+        tone: newStatus === 'Confirmed' ? 'teal' : newStatus === 'Cancelled' ? 'rose' : 'brand',
+        title: `Appointment ${newStatus}`,
+        body: `Consultation with Dr. ${appt.doctorId?.name || 'Doctor'} marked as ${newStatus}.`,
+        sourceId: appt._id,
+      })
+    }
 
     return presentAppointment(updated)
   },

@@ -6,7 +6,7 @@ import { useApi } from '../lib/useApi'
 import { useAuth } from '../lib/auth'
 
 const patientFilters = ['All', 'Triage', 'Chat', 'Report', 'Medication']
-const hospitalFilters = ['All', 'Account', 'Triage', 'Report', 'Medication']
+const hospitalFilters = ['All', 'Appointment', 'Doctor', 'Camp', 'Facility', 'Account']
 
 export default function History() {
   const { user } = useAuth()
@@ -19,14 +19,20 @@ export default function History() {
     () => api.history({ limit: 100, ...(filter === 'All' ? {} : { kind: filter }) }),
     [filter]
   )
-  const dashboard = useApi(() => api.dashboard(), [])
-  const sessions = useApi(() => api.triage.sessions({ limit: 100 }), [])
+  const dashboard = useApi(
+    () => (isHospital ? Promise.resolve({ data: null }) : api.dashboard()),
+    [isHospital]
+  )
+  const sessions = useApi(
+    () => (isHospital ? Promise.resolve({ data: [] }) : api.triage.sessions({ limit: 100 })),
+    [isHospital]
+  )
   const hospitalProfile = useApi(
-    () => (isHospital ? api.hospitals.myProfile() : Promise.resolve(null)),
+    () => (isHospital ? api.hospitals.myProfile() : Promise.resolve({ data: null })),
     [isHospital]
   )
   const managedAppts = useApi(
-    () => (isHospital ? api.hospitals.managedAppointments() : Promise.resolve(null)),
+    () => (isHospital ? api.hospitals.managedAppointments() : Promise.resolve({ data: [] })),
     [isHospital]
   )
 
@@ -59,7 +65,7 @@ export default function History() {
               filter === f ? 'bg-ink text-white' : 'bg-white text-slate ring-1 ring-line hover:ring-[#cfd8e3]'
             }`}
           >
-            {f}
+            {f === 'Camp' ? 'Camps & Drives' : f === 'Facility' ? 'Facility Desk' : f}
           </button>
         ))}
         <span className="ml-auto text-[12.5px] text-muted">

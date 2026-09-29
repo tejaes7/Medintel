@@ -4,6 +4,7 @@ import {
   eventRepository,
   userRepository,
 } from '../../data/repositories/index.js'
+import { historyService } from '../history/historyService.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
 
 export const hospitalService = {
@@ -75,6 +76,16 @@ export const hospitalService = {
     } else {
       hospital = await hospitalRepository.update(hospital._id, data)
     }
+
+    await historyService.record({
+      userId,
+      kind: 'Facility',
+      tone: 'brand',
+      title: 'Facility Profile Updated',
+      body: `${hospital.name} details, contact information, or departments updated.`,
+      sourceId: hospital._id,
+    })
+
     return presentHospital(hospital)
   },
 
@@ -107,6 +118,16 @@ export const hospitalService = {
       })
     }
 
+    const docPrefix = doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`
+    await historyService.record({
+      userId,
+      kind: 'Doctor',
+      tone: 'teal',
+      title: `Specialist Added: ${docPrefix}`,
+      body: `${doctor.qualification} onboarded to ${doctor.department} (${doctor.experienceYears} yrs exp, ₹${doctor.fee}).`,
+      sourceId: doctor._id,
+    })
+
     return presentDoctor(doctor)
   },
 
@@ -116,6 +137,15 @@ export const hospitalService = {
 
     const deleted = await doctorRepository.deleteForHospital(doctorId, hospital._id)
     if (!deleted) throw new NotFoundError('Doctor or permission denied')
+
+    await historyService.record({
+      userId,
+      kind: 'Doctor',
+      tone: 'rose',
+      title: 'Specialist Removed from Roster',
+      body: 'Doctor removed from active hospital appointment scheduling.',
+    })
+
     return { success: true }
   },
 
@@ -140,6 +170,15 @@ export const hospitalService = {
       description: eventData.description || '',
     })
 
+    await historyService.record({
+      userId,
+      kind: 'Camp',
+      tone: 'teal',
+      title: `Health Drive Scheduled: ${event.title}`,
+      body: `${event.type} event on ${new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${event.location}.`,
+      sourceId: event._id,
+    })
+
     return presentEvent(event)
   },
 
@@ -149,6 +188,15 @@ export const hospitalService = {
 
     const deleted = await eventRepository.deleteForHospital(eventId, hospital._id)
     if (!deleted) throw new NotFoundError('Event or permission denied')
+
+    await historyService.record({
+      userId,
+      kind: 'Camp',
+      tone: 'rose',
+      title: 'Health Drive Cancelled',
+      body: 'Scheduled camp or drive removed from hospital listings.',
+    })
+
     return { success: true }
   },
 

@@ -6,7 +6,7 @@
   "description": "MedIntel API — layered modular monolith",
   "main": "src/index.js",
   "scripts": {
-    "dev": "node --watch src/index.js",
+    "dev": "node --watch --watch-path=src src/index.js",
     "start": "node src/index.js",
     "seed": "node scripts/seed.js",
     "smoke": "node scripts/smoke.js",
